@@ -1,0 +1,77 @@
+#!/usr/bin/python
+#BF interpreter.
+#@author: Ali Can Bulbul.
+from __future__ import with_statement
+import sys
+def execute(input,a,p,d,l=0):
+    if not l: l=len(input)
+    s=[] #loop stack
+    ip=0 #input string pointer
+    r=''
+    lp=False #loop mode
+    while ip < l:
+   	if input[ip]=='<':
+		if p>0: p-=1 #decrement the pointer
+ 		else: lp=False 	
+	elif input[ip]=='>':
+		if p<30000: p+=1 #increment the pointer
+		else: lp=False
+   	elif input[ip]=='+':
+		if a[p]<255: a[p]+=1 #increment value
+		else: lp=False
+   	elif input[ip]=='-':
+		if a[p]>0: a[p]-=1 #decrement value
+		else: lp=False
+   	elif input[ip]==',':#debug
+		if d:
+			try:a[p]=ord(raw_input()[0]) #input
+			except: pass
+        elif input[ip]=='.': r+=chr(a[p]) #output
+	elif input[ip]=='#':
+		if d:
+			 r+=str(a[p]) #debug
+   	elif input[ip]=='[': 
+		s.append(ip) #start of loop
+   		lp=True
+	elif input[ip]==']':
+		if a[p] and lp:
+			try:  
+				ip=s[-1]#loop
+			except: pass
+		else: s.pop()
+	ip+=1
+    if len(r):print r
+    return (p,a)
+
+def main():
+	debug=False
+	a=[0 for e in xrange(0,30001)] #the array
+	p=0 #the pointer
+	if '-h' in sys.argv or '--help' in sys.argv:
+		print 'frainbuck, a brainf**k interpreter. version 0.9.9.1'
+		print '''----------------------------------------------------
+-d: debug mode.
+-f: [file]: execute file.
+-h or --help: print this dialog.'''
+		return
+	if '-d' in sys.argv: debug=True
+	try:
+		try:
+			with open(sys.argv[sys.argv.index('-f')+1]) as file:
+				s=file.read() 
+				execute(s,a,p,debug,len(s))
+		except:
+			#Command line mode:
+			print 'frainbuck, a brainf**k interpreter. version 0.9.9.1'
+			if debug: print 'Debug Mode!'
+			while True:
+				if debug: print 'p: %d \narray[p]: %d' %(p,a[p])
+    				print 'f**k:',
+				i=raw_input()
+    				if '!' in i: return
+				p,a = execute(i,a,p,debug)
+	except KeyboardInterrupt: 
+		print 'Goodbye!'
+		exit()
+
+if __name__=='__main__': main()
