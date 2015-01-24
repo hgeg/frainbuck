@@ -17,7 +17,6 @@ def run(s,write):
     try: p,m,i,ps,o = c[s[i]](p,m,i,ps)
     except: i+=1; o='';
     write(o)
-  return 0
 
 def helptext():
     return ('frainbuck, a brainf**k interpreter: v1.0\n'
