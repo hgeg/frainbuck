@@ -1,39 +1,29 @@
 #!/usr/bin/env python
 import sys
 
-#commands
-c = { '+': lambda p,m,i,ps: (p,       m[:p]+[m[p]+1]+m[p+1:],        i+1, ps,     ''),                     #increment data
-      '-': lambda p,m,i,ps: (p,       m[:p]+[m[p]-(m[p]>0)]+m[p+1:], i+1, ps,     ''),                     #decrement data
-      '>': lambda p,m,i,ps: (p+1,     m,                             i+1, ps,     ''),                     #increment pointer
-      '<': lambda p,m,i,ps: (p-(i>0), m,                             i+1, ps,     ''),                     #increment pointer
-      '.': lambda p,m,i,ps: (p,       m,                             i+1, ps,     chr(m[p])),              #output pointer
-      '[': lambda p,m,i,ps: (p,       m,                             i+1, ps+[i], ''),                     #start loop
-      ']': lambda p,m,i,ps: (p,       m,       ps[-1]+1 if m[p] else i+1, ps[:-1] if m[p]==0 else ps, ''), #stop loop
+md = lambda ps: (not len(ps)==0) and not ps[-1][1]
+
+c = { '+': lambda r,p,m,i,ps: (p, m if md(ps) else m[:p]+[(m[p]+1)%256]+m[p+1:], i+1, ps, ''), 
+      '-': lambda r,p,m,i,ps: (p, m if md(ps) else m[:p]+[(m[p]-1)%256]+m[p+1:], i+1, ps, ''), 
+      '>': lambda r,p,m,i,ps: (p+(0 if md(ps) else 1), m, i+1, ps, ''),                        
+      '<': lambda r,p,m,i,ps: (p-(0 if md(ps) else (i>0)), m, i+1, ps, ''),                    
+      '.': lambda r,p,m,i,ps: (p, m, i+1, ps, '' if md(ps) else chr(m[p])),                    
+      ',': lambda r,p,m,i,ps: (p, m if md(ps) else m[:p]+[ord(r(1))]+m[p+1:], i+1, ps, ''),    
+      '[': lambda r,p,m,i,ps: (p, m, i+1, ps+[(i,m[p]>0)], ''),                                  
+      ']': lambda r,p,m,i,ps: (p, m, ps[-1][0]+1 if m[p] else i+1, ps if m[p] else ps[:-1], ''), 
     }
 
-def run(s,write):
-  p,m,i,ps,o  = 0, [0]*9999, 0, [], '' #memory pointer, system memory, program pointer, program stack, output
+def run(s,w,r):
+  p,m,i,ps,o  = 0, [0]*9999, 0, [], '' 
   while i<len(s):
-    try: p,m,i,ps,o = c[s[i]](p,m,i,ps)
-    except: i+=1; o='';
-    write(o)
-
-def helptext():
-    return ('frainbuck, a brainf**k interpreter: v1.0\n'
-            'Usage: frainbuck [-o outfile] [-f infile | -m input] [-i|-h]\n')
+    try: p,m,i,ps,o = c[s[i]](r.read,p,m,i,ps)
+    except KeyError: i+=1; o='';
+    except KeyboardInterrupt: return
+    w.write(o); w.flush()
 
 if __name__=='__main__': 
     args = dict(zip(sys.argv[1:][0::2],sys.argv[1:][1::2] or [0]))
-    #output selection
-    if   '-o' in args: out = open(args['-o'],'w')
-    else:              out = sys.stdout; out.flush()
-    #input selection
-    if   '-h' in args: out.write(helptext()); sys.exit()
-    elif '-m' in args: sin = args['-m']
-    elif '-f' in args: f = open(args['-f'],'r');sin=f.read();f.close()
-    elif '-i' in args: out.write('frainbuck, a brainf**k interpreter: v1.0\nInteractive Shell:\n------------------\n*: Not yet implemented! EXIT\n'); sys.exit()
-    else: out.write(helptext()); sys.exit()
-    #interpreter
-    run(sin,out.write)
-    #cleanup
-    out.close()
+    if '-f' in args: f = open(args['-f'],'r');sin=f.read();f.close()
+    else: sys.stdout.write('frainbuck, a brainf**k interpreter: v0.4:\n--------------------\n*: Not yet implemented! EXIT\n'); sys.exit()
+    run(sin,sys.stdout,sys.stdin)
+    sys.stdout.close()
