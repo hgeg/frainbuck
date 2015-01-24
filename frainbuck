@@ -12,7 +12,7 @@ c = { '+': lambda p,m,i,ps: (p,       m[:p]+[m[p]+1]+m[p+1:],        i+1, ps,   
     }
 
 def run(s,write):
-  p,m,i,ps,o  = 0, [0]*2000, 0, [], '' #memory pointer, system memory, program pointer, program stack, output
+  p,m,i,ps,o  = 0, [0]*9999, 0, [], '' #memory pointer, system memory, program pointer, program stack, output
   while i<len(s):
     try: p,m,i,ps,o = c[s[i]](p,m,i,ps)
     except: i+=1; o='';
