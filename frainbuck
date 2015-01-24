@@ -2,28 +2,22 @@
 import sys
 
 md = lambda ps: (not len(ps)==0) and not ps[-1][1]
-
-c = { '+': lambda r,p,m,i,ps: (p, m if md(ps) else m[:p]+[(m[p]+1)%256]+m[p+1:], i+1, ps, ''), 
-      '-': lambda r,p,m,i,ps: (p, m if md(ps) else m[:p]+[(m[p]-1)%256]+m[p+1:], i+1, ps, ''), 
-      '>': lambda r,p,m,i,ps: (p+(0 if md(ps) else 1), m, i+1, ps, ''),                        
-      '<': lambda r,p,m,i,ps: (p-(0 if md(ps) else (i>0)), m, i+1, ps, ''),                    
-      '.': lambda r,p,m,i,ps: (p, m, i+1, ps, '' if md(ps) else chr(m[p])),                    
-      ',': lambda r,p,m,i,ps: (p, m if md(ps) else m[:p]+[ord(r(1))]+m[p+1:], i+1, ps, ''),    
-      '[': lambda r,p,m,i,ps: (p, m, i+1, ps+[(i,m[p]>0)], ''),                                  
-      ']': lambda r,p,m,i,ps: (p, m, ps[-1][0]+1 if m[p] else i+1, ps if m[p] else ps[:-1], ''), 
-    }
+c = {'+': lambda r,p,m,i,ps: (p, m if md(ps) else m[:p]+[(m[p]+1)%256]+m[p+1:], i+1, ps, ''), '-': lambda r,p,m,i,ps: (p, m if md(ps) else m[:p]+[(m[p]-1)%256]+m[p+1:], i+1, ps, ''), '>': lambda r,p,m,i,ps: (p+(0 if md(ps) else 1), m if p+1<len(m) else m+[0,0], i+1, ps, ''), '<': lambda r,p,m,i,ps: (p-(0 if md(ps) else (i>0)), m, i+1, ps, ''), '.': lambda r,p,m,i,ps: (p, m, i+1, ps, '' if md(ps) else chr(m[p])), ',': lambda r,p,m,i,ps: (p, m if md(ps) else m[:p]+[ord(r(1))]+m[p+1:], i+1, ps, ''), '[': lambda r,p,m,i,ps: (p, m, i+1, ps+[(i,m[p]>0)], ''), ']': lambda r,p,m,i,ps: (p, m, ps[-1][0]+1 if m[p] else i+1, ps if m[p] else ps[:-1], '')}
 
 def run(s,w,r):
-  p,m,i,ps,o  = 0, [0]*9999, 0, [], '' 
+  if s=='q!': return 0
+  p,m,i,ps,o  = 0, [0,0], 0, [], '' 
   while i<len(s):
     try: p,m,i,ps,o = c[s[i]](r.read,p,m,i,ps)
     except KeyError: i+=1; o='';
     except KeyboardInterrupt: return
     w.write(o); w.flush()
+  return 1
 
 if __name__=='__main__': 
-    args = dict(zip(sys.argv[1:][0::2],sys.argv[1:][1::2] or [0]))
-    if '-f' in args: f = open(args['-f'],'r');sin=f.read();f.close()
-    else: sys.stdout.write('frainbuck, a brainf**k interpreter: v0.4:\n--------------------\n*: Not yet implemented! EXIT\n'); sys.exit()
-    run(sin,sys.stdout,sys.stdin)
-    sys.stdout.close()
+  if len(sys.argv)>1: f = open(sys.argv[1],'r');sin=f.read();f.close()
+  else: 
+    sys.stdout.write('frainbuck, a brainf**k interpreter: v0.7.4:\n--------------------\n');
+    while run(raw_input('*: '),sys.stdout,sys.stdin): pass
+  run(sin,sys.stdout,sys.stdin)
+  sys.stdout.close()
