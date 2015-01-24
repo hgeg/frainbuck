@@ -1,77 +1,40 @@
-#!/usr/bin/python
-#BF interpreter.
-#@author: Ali Can Bulbul.
-from __future__ import with_statement
+#!/usr/bin/env python
 import sys
-def execute(input,a,p,d,l=0):
-    if not l: l=len(input)
-    s=[] #loop stack
-    ip=0 #input string pointer
-    r=''
-    lp=False #loop mode
-    while ip < l:
-   	if input[ip]=='<':
-		if p>0: p-=1 #decrement the pointer
- 		else: lp=False 	
-	elif input[ip]=='>':
-		if p<30000: p+=1 #increment the pointer
-		else: lp=False
-   	elif input[ip]=='+':
-		if a[p]<255: a[p]+=1 #increment value
-		else: lp=False
-   	elif input[ip]=='-':
-		if a[p]>0: a[p]-=1 #decrement value
-		else: lp=False
-   	elif input[ip]==',':#debug
-		if d:
-			try:a[p]=ord(raw_input()[0]) #input
-			except: pass
-        elif input[ip]=='.': r+=chr(a[p]) #output
-	elif input[ip]=='#':
-		if d:
-			 r+=str(a[p]) #debug
-   	elif input[ip]=='[': 
-		s.append(ip) #start of loop
-   		lp=True
-	elif input[ip]==']':
-		if a[p] and lp:
-			try:  
-				ip=s[-1]#loop
-			except: pass
-		else: s.pop()
-	ip+=1
-    if len(r):print r
-    return (p,a)
 
-def main():
-	debug=False
-	a=[0 for e in xrange(0,30001)] #the array
-	p=0 #the pointer
-	if '-h' in sys.argv or '--help' in sys.argv:
-		print 'frainbuck, a brainf**k interpreter. version 0.9.9.1'
-		print '''----------------------------------------------------
--d: debug mode.
--f: [file]: execute file.
--h or --help: print this dialog.'''
-		return
-	if '-d' in sys.argv: debug=True
-	try:
-		try:
-			with open(sys.argv[sys.argv.index('-f')+1]) as file:
-				s=file.read() 
-				execute(s,a,p,debug,len(s))
-		except:
-			#Command line mode:
-			print 'frainbuck, a brainf**k interpreter. version 0.9.9.1'
-			if debug: print 'Debug Mode!'
-			while True:
-				if debug: print 'p: %d \narray[p]: %d' %(p,a[p])
-    				print 'f**k:',
-				i=raw_input()
-    				if '!' in i: return
-				p,a = execute(i,a,p,debug)
-	except KeyboardInterrupt: 
-		print 'Goodbye!'
-		exit()
+#commands
+c = { '+': lambda p,m,i,ps: (p,       m[:p]+[m[p]+1]+m[p+1:],        i+1, ps,     ''),                     #increment data
+      '-': lambda p,m,i,ps: (p,       m[:p]+[m[p]-(m[p]>0)]+m[p+1:], i+1, ps,     ''),                     #decrement data
+      '>': lambda p,m,i,ps: (p+1,     m,                             i+1, ps,     ''),                     #increment pointer
+      '<': lambda p,m,i,ps: (p-(i>0), m,                             i+1, ps,     ''),                     #increment pointer
+      '.': lambda p,m,i,ps: (p,       m,                             i+1, ps,     chr(m[p])),              #output pointer
+      '[': lambda p,m,i,ps: (p,       m,                             i+1, ps+[i], ''),                     #start loop
+      ']': lambda p,m,i,ps: (p,       m,       ps[-1]+1 if m[p] else i+1, ps[:-1] if m[p]==0 else ps, ''), #stop loop
+    }
 
-if __name__=='__main__': main()
+def run(s,write):
+  p,m,i,ps,o  = 0, [0]*2000, 0, [], '' #memory pointer, system memory, program pointer, program stack, output
+  while i<len(s):
+    try: p,m,i,ps,o = c[s[i]](p,m,i,ps)
+    except: i+=1; o='';
+    write(o)
+  return 0
+
+def helptext():
+    return ('frainbuck, a brainf**k interpreter: v1.0\n'
+            'Usage: frainbuck [-o outfile] [-f infile | -m input] [-i|-h]\n')
+
+if __name__=='__main__': 
+    args = dict(zip(sys.argv[1:][0::2],sys.argv[1:][1::2] or [0]))
+    #output selection
+    if   '-o' in args: out = open(args['-o'],'w')
+    else:              out = sys.stdout; out.flush()
+    #input selection
+    if   '-h' in args: out.write(helptext()); sys.exit()
+    elif '-m' in args: sin = args['-m']
+    elif '-f' in args: f = open(args['-f'],'r');sin=f.read();f.close()
+    elif '-i' in args: out.write('frainbuck, a brainf**k interpreter: v1.0\nInteractive Shell:\n------------------\n*: Not yet implemented! EXIT\n'); sys.exit()
+    else: out.write(helptext()); sys.exit()
+    #interpreter
+    run(sin,out.write)
+    #cleanup
+    out.close()
